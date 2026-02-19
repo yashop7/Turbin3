@@ -37,6 +37,11 @@ pub struct ThawNft<'info> {
 
 impl<'info> ThawNft<'info> {
     pub fn thaw_nft(&mut self) -> Result<()> {
+        require!(
+            self.authority.key() == self.collection_authority.creator,
+            MPLXCoreError::NotAuthorized
+        );
+
         UpdatePluginV1CpiBuilder::new(&self.core_program.to_account_info())
             .asset(&self.asset.to_account_info())
             .collection(Some(&self.collection.to_account_info()))

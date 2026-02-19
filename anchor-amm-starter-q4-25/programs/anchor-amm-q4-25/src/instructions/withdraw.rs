@@ -17,7 +17,9 @@ pub struct Withdraw<'info> {
     #[account(
         mut,
         seeds = [b"config",config.seed.to_le_bytes().as_ref()],
-        bump = config.config_bump
+        bump = config.config_bump,
+        has_one = mint_x,
+        has_one = mint_y
     )]
     pub config: Account<'info, Config>,
 
@@ -41,13 +43,15 @@ pub struct Withdraw<'info> {
     )]
     pub vault_y: Account<'info, TokenAccount>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
         associated_token::mint = mint_x,
         associated_token::authority = user,
     )]
     pub user_x: Account<'info, TokenAccount>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
         associated_token::mint = mint_y,
         associated_token::authority = user,
     )]
@@ -82,6 +86,7 @@ impl<'info> Withdraw<'info> {
             self.user_lp.amount >= amount,
             AmmError::InsufficientBalance
         );
+        require!(min_x != 0 || min_y != 0, AmmError::InvalidAmount);
 
         let withdraw_amount = ConstantProduct::xy_withdraw_amounts_from_l(
             self.vault_x.amount,

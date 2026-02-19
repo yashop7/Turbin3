@@ -17,7 +17,9 @@ pub struct Swap<'info> {
     #[account(
         mut,
         seeds = [b"config",config.seed.to_le_bytes().as_ref()],
-        bump = config.config_bump
+        bump = config.config_bump,
+        has_one = mint_x,
+        has_one = mint_y
     )]
     pub config: Account<'info, Config>,
 
@@ -41,13 +43,15 @@ pub struct Swap<'info> {
     )]
     pub vault_y: Account<'info, TokenAccount>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
         associated_token::mint = mint_x,
         associated_token::authority = user,
     )]
     pub user_x: Account<'info, TokenAccount>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
         associated_token::mint = mint_y,
         associated_token::authority = user,
     )]
@@ -94,6 +98,8 @@ impl<'info> Swap<'info> {
             .ok_or(AmmError::Overflow)?;
 
         require!(amount_out >= min, AmmError::SlippageExceeded);
+        require!(amount != 0, AmmError::InvalidAmount);
+        require!(amount_out != 0, AmmError::InvalidAmount);
 
         self.deposit_tokens(is_x, amount)?;
         self.withdraw_tokens(is_x, amount_out)?;
